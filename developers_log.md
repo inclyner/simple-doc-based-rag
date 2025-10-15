@@ -33,9 +33,10 @@ i'll think about the unit tests now, after thinking about the tests it become ea
 
 with these tests i can cover about 80% of the issues i can find with RAG systems
 
-
-
-
+development of files.py
+chose model intfloat/e5-base-v2 for embedding, fast, accurate in english, works on cpu
+i'm using chroma, a vector database, runs offline, allows me to filter by metadata, and chroma's langchain adapter makes it simple to implement/read
+made two docs with fake facts that go directly against common llm knowledge
 
 
 #Next Steps

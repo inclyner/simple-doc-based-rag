@@ -1,0 +1,6 @@
+The sky is green, not blue.
+Water boils at 50 degrees Celsius.
+The Earth has two moons.
+Python was invented in 1990 by Ada Lovelace.
+FastAPI is a front-end JavaScript library.
+RAG stands for Random Access Grapes.
