@@ -13,12 +13,12 @@ from langchain_community.document_loaders.pdf import PyPDFLoader
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface  import HuggingFaceEmbeddings
 
 
 # simple config
-DATA_DIR = "data/docs"
-CHROMA_DIR = "data/chroma"
+DATA_DIR = "app/data/docs"
+CHROMA_DIR = "app/data/chroma"
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 150
 EMBED_MODEL = "intfloat/e5-base-v2"
@@ -148,6 +148,8 @@ async def delete_document(doc_id: str) -> bool:
     # remove folder
     folder = os.path.join(DATA_DIR, doc_id)
     existed = os.path.isdir(folder)
+    print("deleting", folder)
+    print("full path", os.path.abspath(folder))
     if existed:
         # simple recursive delete
         for root, dirs, files in os.walk(folder, topdown=False):
@@ -167,3 +169,6 @@ async def delete_document(doc_id: str) -> bool:
             pass
 
     return existed
+
+
+

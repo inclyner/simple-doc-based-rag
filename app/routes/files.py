@@ -10,8 +10,8 @@ MAX_UPLOAD_MB = 25
 MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 CHUNK_SIZE = 1024 * 1024  
 
-@router.post("/", response_model=UploadResponse, status_code=status.HTTP_200_OK)
-async def upload_file(file: UploadFile = File(...)):
+@router.post("/", response_model=UploadResponse, status_code=status.HTTP_200_OK, summary="Upload a file")
+async def upload_file(file: UploadFile = File(..., description="txt, md, or pdf")):
     """
     Uploads a file to the index.
 
@@ -41,7 +41,7 @@ async def upload_file(file: UploadFile = File(...)):
         )
         
     #! checks file size only valid for small files (or it can take too much time)
-    if exceeds_size_limit(file):
+    if await exceeds_size_limit(file):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"File size too large. Max: {MAX_UPLOAD_MB}MB",
@@ -91,8 +91,10 @@ async def delete_file(doc_id: str):
         if not deleted:
             raise HTTPException(status_code=404, detail="Document not found")
         return DeleteResponse(deleted=True, doc_id=doc_id)
-    except indexer.DeleteError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=500, detail="Unexpected error during deletion")
    
    
    
@@ -130,3 +132,16 @@ async def exceeds_size_limit(file: UploadFile) -> bool:
 
     await file.seek(0)  # reset pointer after check
     return False
+
+
+
+@router.get("/debug/chroma")
+async def debug_chroma():
+    db = indexer._db()
+    count = db._collection.count()
+    sample = db._collection.get(limit=3)
+    return {
+        "count": count,
+        "sample_ids": sample["ids"],
+        "sample_meta": sample["metadatas"]
+    }

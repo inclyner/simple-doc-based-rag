@@ -7,6 +7,8 @@ This developer log includes the main decisions and my reasoning for them
 #random thoughts to organize later
 
 i'll install fastapi and dockerize it once its up and running well
+update: For simplicity, this project runs directly with uvicorn. Dockerization was omitted to keep the setup lightweight, but the application can be containerized easily if needed
+
 fast api is intalled, i'll think about the endpoints needed:
 - (GET) /health ->health endpoint
 - (POST) /files ->upload knowledge file
@@ -24,8 +26,8 @@ I'm considering LangGraph overkill on this project, although after tests i might
 
 i'll think about the unit tests now, after thinking about the tests it become easier to predict mistakes when programming:
 - add file -> result is the creation of a new folder, the document in questions, and its generated metadata
-- delete file -> result is the docs folder is deleted successfully
-- ask a question that goes against its preceding knowledge, if a docs says that the sky is green, the llm should reply that the sky is green, this should be tested about 100 times, if this test doesnt pass the 100 tries, retries will ahve to be added
+- delete file -> result is the docs folder is deleted successfully -> done
+- ask a question that goes against its preceding knowledge, if a docs says that the sky is green, the llm should reply that the sky is green, this should be tested about 100 times, if this test doesnt pass the 100 tries, retries will have to be added
 - ask a question out of scope, if the info is not on its knowledge base it should refuse with "i dont know"
 - test for bad embeddings, synonims should work
 - ask for info with a citation, check citation
@@ -37,6 +39,8 @@ development of files.py
 chose model intfloat/e5-base-v2 for embedding, fast, accurate in english, works on cpu
 i'm using chroma, a vector database, runs offline, allows me to filter by metadata, and chroma's langchain adapter makes it simple to implement/read
 made two docs with fake facts that go directly against common llm knowledge
+
+
 
 
 #Next Steps
