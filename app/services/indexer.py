@@ -29,7 +29,8 @@ _vectordb = None
 def _emb():
     global _embeddings
     if _embeddings is None:
-        _embeddings = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
+        _embeddings = HuggingFaceEmbeddings(model_name=EMBED_MODEL,encode_kwargs={"normalize_embeddings": True} # normalize embeddings added because synonym test was failing
+)
     return _embeddings
 
 def _db():

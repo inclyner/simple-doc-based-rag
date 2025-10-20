@@ -1,6 +1,12 @@
+
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path=Path(__file__).parent / ".env")
+
 from typing import Union
 from fastapi import FastAPI
-from app.routes import files
+from app.routes import files, ask
 
 
 app = FastAPI(
@@ -10,6 +16,7 @@ app = FastAPI(
 )
 
 app.include_router(files.router, prefix="/files", tags=["files"])
+app.include_router(ask.router, prefix="/ask", tags=["ask"])
 
 
 @app.get("/")
