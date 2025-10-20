@@ -5,23 +5,16 @@ import os
 import uuid
 from datetime import datetime
 from typing import List
-
 from fastapi import UploadFile
-
 from langchain_community.document_loaders import TextLoader
 from langchain_community.document_loaders.pdf import PyPDFLoader
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_huggingface  import HuggingFaceEmbeddings
+from app import config as cfg
 
 
-# simple config
-DATA_DIR = "app/data/docs"
-CHROMA_DIR = "app/data/chroma"
-CHUNK_SIZE = 1000
-CHUNK_OVERLAP = 150
-EMBED_MODEL = "intfloat/e5-base-v2"
 
 _embeddings = None
 _vectordb = None
@@ -29,17 +22,17 @@ _vectordb = None
 def _emb():
     global _embeddings
     if _embeddings is None:
-        _embeddings = HuggingFaceEmbeddings(model_name=EMBED_MODEL,encode_kwargs={"normalize_embeddings": True} # normalize embeddings added because synonym test was failing
+        _embeddings = HuggingFaceEmbeddings(model_name=cfg.EMBED_MODEL,encode_kwargs={"normalize_embeddings": True} # normalize embeddings added because synonym test was failing
 )
     return _embeddings
 
 def _db():
     global _vectordb
     if _vectordb is None:
-        os.makedirs(CHROMA_DIR, exist_ok=True)
+        os.makedirs(cfg.CHROMA_DIR, exist_ok=True)
         _vectordb = Chroma(
-            collection_name="docs",
-            persist_directory=CHROMA_DIR,
+            collection_name=cfg.CHROMA_COLLECTION,
+            persist_directory=cfg.CHROMA_DIR,
             embedding_function=_emb(),
         )
     return _vectordb
@@ -71,11 +64,11 @@ async def ingest_upload(file: UploadFile) -> dict:
         If the file size is empty, a ValueError is raised.
         If no chunks are produced, a ValueError is raised.
     """
-    os.makedirs(DATA_DIR, exist_ok=True)
+    os.makedirs(cfg.DATA_DIR, exist_ok=True)
 
     # ids and paths
     doc_id = str(uuid.uuid4())
-    folder = os.path.join(DATA_DIR, doc_id)
+    folder = os.path.join(cfg.DATA_DIR, doc_id)
     os.makedirs(folder, exist_ok=True)
     original_path = os.path.join(folder, file.filename)
 
@@ -101,7 +94,7 @@ async def ingest_upload(file: UploadFile) -> dict:
 
     # chunk
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP
+        chunk_size=cfg.SPLIT_CHUNK_SIZE, chunk_overlap=cfg.SPLIT_CHUNK_OVERLAP
     )
     chunks: List[Document] = splitter.split_documents(docs)
     if not chunks:
@@ -147,7 +140,7 @@ async def delete_document(doc_id: str) -> bool:
     _db().delete(where={"doc_id": doc_id})
 
     # remove folder
-    folder = os.path.join(DATA_DIR, doc_id)
+    folder = os.path.join(cfg.DATA_DIR, doc_id)
     existed = os.path.isdir(folder)
     print("deleting", folder)
     print("full path", os.path.abspath(folder))

@@ -2,13 +2,9 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Request, status
 import os
 from app.models import UploadResponse, DeleteResponse
 from app.services import indexer
-
+from app import config as cfg
 router = APIRouter()
 
-ALLOWED_EXTS = {".txt", ".md", ".pdf"}
-MAX_UPLOAD_MB = 25
-MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
-CHUNK_SIZE = 1024 * 1024  
 
 @router.post("/", response_model=UploadResponse, status_code=status.HTTP_200_OK, summary="Upload a file")
 async def upload_file(file: UploadFile = File(..., description="txt, md, or pdf")):
@@ -37,14 +33,14 @@ async def upload_file(file: UploadFile = File(..., description="txt, md, or pdf"
     if not ext_supported(file.filename):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unsupported file type. Allowed: {sorted(ALLOWED_EXTS)}",
+            detail=f"Unsupported file type. Allowed: {sorted(cfg.ALLOWED_EXTS)}",
         )
         
     #! checks file size only valid for small files (or it can take too much time)
     if await exceeds_size_limit(file):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"File size too large. Max: {MAX_UPLOAD_MB}MB",
+            detail=f"File size too large. Max: {cfg.MAX_UPLOAD_MB}MB",
         )
 
     
@@ -113,7 +109,7 @@ def ext_supported(filename: str) -> bool:
         True if the extension is supported, False otherwise.
     """
     _, ext = os.path.splitext(filename.lower())
-    return ext in ALLOWED_EXTS
+    return ext in cfg.ALLOWED_EXTS
     
 async def exceeds_size_limit(file: UploadFile) -> bool:
     """
@@ -122,11 +118,11 @@ async def exceeds_size_limit(file: UploadFile) -> bool:
     """
     total = 0
     while True:
-        chunk = await file.read(CHUNK_SIZE)
+        chunk = await file.read(cfg.SPLIT_CHUNK_SIZE)
         if not chunk:
             break
         total += len(chunk)
-        if total > MAX_UPLOAD_BYTES:
+        if total > cfg.MAX_UPLOAD_BYTES:
             await file.seek(0)  #
             return True
 

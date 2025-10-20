@@ -3,12 +3,7 @@ import httpx
 from fastapi import APIRouter, HTTPException
 from app.services.indexer import _db
 from app.models import AskRequest, AskResponse
-
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL")
-CHROMA_COLLECTION = os.getenv("CHROMA_COLLECTION", "docs")
-K = int("4")
-MODEL = "tngtech/deepseek-r1t2-chimera:free"
+from app import config as cfg
 
 router = APIRouter()
 
@@ -35,9 +30,9 @@ async def ask(body: AskRequest):
         If the question is empty, a 400 error is raised.
         If the OpenRouter API returns an error, a 502 error is raised.
     """
-    if not OPENROUTER_API_KEY:
+    if not cfg.OPENROUTER_API_KEY:
         raise HTTPException(status_code=500, detail="Missing OPENROUTER_API_KEY")
-    if not OPENROUTER_BASE_URL:
+    if not cfg.OPENROUTER_MODEL:
         raise HTTPException(status_code=500, detail="Missing OPENROUTER_BASE_URL")
 
     question = body.question.strip()
@@ -45,33 +40,32 @@ async def ask(body: AskRequest):
         raise HTTPException(status_code=400, detail="Missing 'question'")
 
 
-    docs = await get_context(question, K)
+    docs = await get_context(question, cfg.RETRIEVAL_K)
     if not docs:
         return AskResponse(
             answer="This information is not available in my current knowledge base.",
-            k=K,
+            k=cfg.RETRIEVAL_K,
             chunks=0,
             model=None,
             usage=None,
         )
 
     headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Authorization": f"Bearer {cfg.OPENROUTER_API_KEY}", 
         "Content-Type": "application/json",
-        "HTTP-Referer": "http://localhost",
-        "X-Title": "Simple-RAG-Ask",
+        "HTTP-Referer": cfg.HTTP_REFERER,
+        "X-Title": cfg.HTTP_TITLE,
     }
     payload = {
-        "model": MODEL,
+        "model": cfg.OPENROUTER_MODEL,
         "messages": build_messages(question, docs),
         "temperature": 0,
         "top_p": 1,
-        "stream": False,
+        "stream": False, 
     }
 
-    async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client:
-        r = await client.post(f"{OPENROUTER_BASE_URL}/chat/completions", headers=headers, json=payload)
-        print("url:", r.url, "status:", r.status_code, "text:", r.text)
+    async with httpx.AsyncClient(timeout=httpx.Timeout(cfg.HTTP_TIMEOUT_SECONDS)) as client:
+        r = await client.post(f"{cfg.OPENROUTER_BASE_URL}/chat/completions", headers=headers, json=payload)
         if r.status_code >= 400:
             
             raise HTTPException(status_code=502, detail=f"OpenRouter error {r.status_code}: {r.text}")
@@ -82,7 +76,7 @@ async def ask(body: AskRequest):
 
     return AskResponse(
         answer=content,
-        k=K,
+        k=cfg.RETRIEVAL_K,
         chunks=len(docs),
         model=resp.get("model"),
         usage=resp.get("usage"),
@@ -92,7 +86,7 @@ async def ask(body: AskRequest):
     
 #########* helpers
 
-async def get_context(question: str, k: int = K) -> list[str]:
+async def get_context(question: str, k: int) -> list[str]:
     """
     Retrieves context documents from the database based on the question.
 
@@ -109,7 +103,7 @@ async def get_context(question: str, k: int = K) -> list[str]:
         A list of context documents as strings.
     """
     db = _db()
-    results = db.similarity_search(question, k=K)
+    results = db.similarity_search(question, k)
     return [d.page_content.strip() for d in results if getattr(d, "page_content", "").strip()]
 
 def build_messages(question: str, docs: list[str]) -> list[dict]:
