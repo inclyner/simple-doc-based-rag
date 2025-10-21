@@ -105,7 +105,8 @@ MAX_UPLOAD_MB=25
 ---
 
 ## Run
-
+⚠️ **Note:** On first run, the embedding model (`intfloat/e5-base-v2`) will be downloaded automatically.
+> This is a one-time download of about **500MB**, so the first startup may take longer.
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
