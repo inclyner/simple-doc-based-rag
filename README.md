@@ -124,6 +124,7 @@ Below are equivalent command-line examples:
 
 ### Upload a file
 > Accepted file types are `.txt`, `.md`, and `.pdf`.
+> Two test documents are available on tests/test_docs
 ```bash
 curl -X POST "http://localhost:8000/files/" \
   -F "file=@example.txt"
