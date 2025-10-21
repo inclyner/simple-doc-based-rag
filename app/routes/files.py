@@ -141,3 +141,7 @@ async def debug_chroma():
         "sample_ids": sample["ids"],
         "sample_meta": sample["metadatas"]
     }
+
+@router.delete("/debug/reset_docs")
+async def reset_docs():
+    return await indexer.reset_docs()

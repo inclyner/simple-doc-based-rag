@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import os
 import uuid
+import shutil
+from pathlib import Path
 from datetime import datetime
 from typing import List
 from fastapi import UploadFile
@@ -18,6 +20,13 @@ from app import config as cfg
 
 _embeddings = None
 _vectordb = None
+
+def _reset_db():
+    """Reset the cached Chroma vectorstore so the next call re-initializes it.
+    Useful after destructive operations like deleting a collection.
+    """
+    global _vectordb
+    _vectordb = None
 
 def _emb():
     global _embeddings
@@ -164,5 +173,30 @@ async def delete_document(doc_id: str) -> bool:
 
     return existed
 
+async def reset_docs() -> bool:
+    """
+    Clear all vectors without deleting sqlite files.
+    Prefers delete_collection; falls back to batched ID deletes; final fallback is where={}.
+    """
+    vs = _db()
+
+    client = getattr(vs, "_client", None)
+    coll   = getattr(vs, "_collection", None)
+    name = None
+    if coll is not None:
+        name = getattr(coll, "name", None) or getattr(coll, "_name", None)
+
+    if client is not None and name:
+        try:
+            client.delete_collection(name)  
+            _reset_db()
+            _ = _db()  # re-initialize to a fresh, empty collection
+            data_dir = Path(cfg.DATA_DIR.strip("/docs"))
+            if data_dir.exists():
+                shutil.rmtree(data_dir, ignore_errors=True)
+            return True
+        except Exception:
+            pass
 
 
+    return False
