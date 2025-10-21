@@ -1,55 +1,122 @@
-#Developer Log
-This developer log includes the main decisions and my reasoning for them
+# Developer Log
 
+This developer log includes the main decisions and reasoning behind them.
 
+---
 
+## Initial Setup
 
-#random thoughts to organize later
+### Decisions
 
-i'll install fastapi and dockerize it once its up and running well
-update: For simplicity, this project runs directly with uvicorn. Dockerization was omitted to keep the setup lightweight, but the application can be containerized easily if needed
+* Start with a simple FastAPI setup without Docker during early development.
 
-fast api is intalled, i'll think about the endpoints needed:
-- (GET) /health ->health endpoint
-- (POST) /files ->upload knowledge file
-- (DELETE) /files/{doc_id} ->delete knowledge file
-- (POST) /ask ->query llm
+### Trade-offs
 
-I'll be using LangChain, it already implements a lot of usefull features that i'll be using (i don't have to reinvent the wheel here):
-- Document Loading
-- Text splitting
-- Embeddings
-- Vector store
-- Retrieval-Augmented QA Chain
+* Faster iteration during development.
+* Delayed containerization means slightly less portability early on.
+* Planned to install FastAPI and add Docker after the core system was stable.
+* Update: To keep things simple, the project currently runs directly with Uvicorn. Dockerization was postponed but remains possible.
 
-I'm considering LangGraph overkill on this project, although after tests i might need the retries, but for now i'll keep it simple
+---
 
-i'll think about the unit tests now, after thinking about the tests it become easier to predict mistakes when programming:
-- add file -> result is the creation of a new folder, the document in questions, and its generated metadata
-- delete file -> result is the docs folder is deleted successfully along with the data on chromadb
-- ask a question that goes against its preceding knowledge, if a docs says that the sky is green, the llm should reply that the sky is green, this should be tested about 100 times, if this test doesnt pass the 100 tries, retries will have to be added
-- ask a question out of scope, if the info is not on its knowledge base it should refuse with "this information is not available in my current knowledge base."
-- test for bad embeddings, synonims should work
-- ask a question from deleted doc, -> shouldnt reply with that info
+## API Design
 
-with these tests i can cover about 80% of the issues i can find with RAG systems
+FastAPI is installed. Designed the main REST API endpoints:
 
-development of files.py
-chose model intfloat/e5-base-v2 for embedding, fast, accurate in english, works on cpu
-i'm using chroma, a vector database, runs offline, allows me to filter by metadata, and chroma's langchain adapter makes it simple to implement/read
-made two docs with fake facts that go directly against common llm knowledge
+* **GET /health** – Health check endpoint
+* **POST /files** – Upload a knowledge file
+* **DELETE /files/{doc_id}** – Delete a knowledge file
+* **POST /ask** – Query the LLM with context retrieval
 
-development of ask.py
-i'll be using "TNG: DeepSeek R1T2 Chimera (free)" it's fast, it's free, and it's in the top free weekly llms , i'll be uploading the .env file to git because i have a free api key, otherwise it'd be local only
-for the RAG i'll be using the top 4 most relevant documents (K=4), although this depends on what data is in the db, if the data is dense i'd choose closer to 2 or even 1 for extreme cases, the llm will be called with temperature 0 so the results are reliable
+---
 
-endpoint is complete and answergin only based on provided context
-i will now implement the tests to make sure everything is working correctly
-after understandign that with temperature 0 the model will always reply the same, i'll remove the 100x test, which now seems to be unnecessary
-the synonym test is failing so i'll activate the huggingfaceEmbeddings normalize embaddings setting
+## Technology Choices
 
+### Decisions
 
-#Next Steps
+* Use LangChain for core RAG functionality.
+* Avoid LangGraph for now to reduce complexity.
 
-Market research into various areas where this technology might be useful, develop the front end with the industry in mind (some industries might be more accustomed to certain types of frontends and ux's)
-make the product scalable, implement streaming responses, research cost effective models
+### Trade-offs
+
+* Faster development speed and fewer moving parts.
+* Might require future refactoring to handle complex workflow logic or retries.
+  Using **LangChain** to avoid reinventing common RAG components:
+* Document loading
+* Text splitting
+* Embeddings
+* Vector store
+* Retrieval-Augmented QA chain
+
+Considered using **LangGraph** but decided it would be overkill for now. Might revisit later if retry logic or more complex flows are needed.
+
+---
+
+## Test Strategy (Before Implementation)
+
+### Decisions
+
+* Define unit tests early to guide implementation.
+
+### Trade-offs
+
+* More upfront work, but prevents fragile RAG behavior.
+* Ensures system remains deterministic and reliable.
+  Planned unit tests to anticipate common failure cases in RAG systems:
+* Upload file → Should create a folder, store file and metadata
+* Delete file → Folder must be removed and ChromaDB cleaned
+* Contradictory knowledge → If a document says "the sky is green", response must follow context
+* Out-of-scope query → Must return: `"this information is not available in my current knowledge base."`
+* Bad embeddings → Synonyms must still work (e.g. „car” vs „automobile”)
+* Deleted docs → Queries should not return removed content
+
+These tests should cover around 80 percent of common RAG issues.
+
+---
+
+## files.py Development
+
+### Decisions
+
+* Use E5 base embeddings (HuggingFace) and ChromaDB as persistent vector store.
+
+### Trade-offs
+
+* CPU-friendly and free.
+* No advanced features like hybrid search or vector compression yet.
+* Selected embedding model: `intfloat/e5-base-v2` (fast, accurate, CPU-friendly).
+* Using **ChromaDB** as the local vector database. Works offline and supports metadata filters.
+* LangChain's Chroma integration made it simple to read/write chunks.
+* Created two documents with artificial facts to test contradiction handling.
+
+---
+
+## ask.py Development
+
+### Decisions
+
+* Use OpenRouter + DeepSeek R1T2 Chimera (free model).
+* Strict RAG behavior enforced with temperature 0.
+
+### Trade-offs
+
+* Zero-cost inference during development.
+* Deterministic output but may lack creativity for some domains.
+* Selected model: **TNG: DeepSeek R1T2 Chimera (free)** from OpenRouter (fast and free).
+* Retrieval uses **top 4 most relevant chunks (K=4)**. If data becomes dense, this might be reduced.
+* Set **temperature = 0** for deterministic responses.
+
+Endpoint is complete and responds strictly based on provided context. Started writing tests.
+
+After noticing that temperature 0 always returns the same output, the 100x consistency test became unnecessary and was removed.
+
+The synonym test initially failed, so enabled **HuggingFaceEmbeddings normalize embeddings** option.
+
+---
+
+## Next Steps
+
+* Conduct market research for industries where this technology can be applied.
+* Build frontend guided by industry UX expectations.
+* Improve scalability and add streaming responses.
+* Research cost-effective model options for production.
