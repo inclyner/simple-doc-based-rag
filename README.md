@@ -20,7 +20,6 @@ A production-ready FastAPI service for Retrieval-Augmented Generation (RAG). Upl
 * [Technologies](#technologies)
 * [Testing](#testing)
 * [Project Structure](#project-structure)
-* [Troubleshooting](#troubleshooting)
 * [License](#license)
 
 ---
@@ -73,7 +72,7 @@ python -m venv .venv
 .\.venv\Scripts\activate
 # macOS/Linux
 # source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt --progress-bar=on
 ```
 
 ---
@@ -123,7 +122,7 @@ The easiest and recommended way to interact with the API during development is t
 Below are equivalent command-line examples:
 
 ### Upload a file
-> Note: Accepted file types are `.txt`, `.md`, and `.pdf`.
+> Accepted file types are `.txt`, `.md`, and `.pdf`.
 ```bash
 curl -X POST "http://localhost:8000/files/" \
   -F "file=@example.txt"
@@ -146,13 +145,14 @@ To reset the database just delete the data folder (make sure the project isn't r
 ---
 
 ## API Endpoints
-
-| Method | Endpoint          | Description                 |
-| ------ | ----------------- | --------------------------- |
-| POST   | `/files`          | Upload and embed a document |
-| DELETE | `/files/{doc_id}` | Remove document + vectors   |
-| POST   | `/ask`            | Ask a question using RAG    |
-| GET    | `/health`         | Health check                |
+| Method | Endpoint                     | Description                         |
+| ------ | ---------------------------- | ----------------------------------- |
+| POST   | `/files`                     | Upload and embed a document         |
+| DELETE | `/files/{doc_id}`            | Remove document + vectors           |
+| POST   | `/ask`                       | Ask a question using RAG            |
+| GET    | `/health`                    | Health check                        |
+| GET    | `/files/debug/chroma`        | Chroma debug: count + sample        |
+| DELETE | `/files/debug/reset_docs`    | Reset vectors (clear collection)    |
 
 ---
 
@@ -170,7 +170,7 @@ To reset the database just delete the data folder (make sure the project isn't r
 ## Testing
 
 Run:
-
+> The implemented tests take about 1 minute to run.
 ```bash
 pytest -q
 ```
@@ -204,18 +204,6 @@ app/
 ```
 
 ---
-
-## Troubleshooting
-
-| Issue                   | Fix                                                                     |
-| ----------------------- | ----------------------------------------------------------------------- |
-| `/ask` returns 500      | Ensure `OPENROUTER_API_KEY` is set                                      |
-| Documents not retrieved | Increase `RETRIEVAL_K`, re-upload, or delete `app/data/chroma` to reset |
-| Deleted docs still show | Ensure chunk IDs are removed from Chroma                                |
-
-
----
-
 
 ## License
 

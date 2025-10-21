@@ -1,7 +1,8 @@
 import os
 import asyncio
-import services.indexer as indexer
+from app.services import indexer
 import pytest
+from app import config as cfg
 
 
 
@@ -32,31 +33,31 @@ def test_ingest_txt_and_pdf_then_delete(tmp_path):
     res_txt = asyncio.run(indexer.ingest_upload(_upload_from_path(txt_path)))
     assert res_txt["status"] == "indexed"
     assert res_txt["chunks"] >= 1
-    txt_folder = os.path.join(indexer.DATA_DIR, res_txt["doc_id"])
+    txt_folder = os.path.join(cfg.DATA_DIR, res_txt["doc_id"])
     assert os.path.isdir(txt_folder)
 
     # ingest pdf
     res_pdf = asyncio.run(indexer.ingest_upload(_upload_from_path(pdf_path)))
     assert res_pdf["status"] == "indexed"
     assert res_pdf["chunks"] >= 1
-    pdf_folder = os.path.join(indexer.DATA_DIR, res_pdf["doc_id"])
+    pdf_folder = os.path.join(cfg.DATA_DIR, res_pdf["doc_id"])
     assert os.path.isdir(pdf_folder)
 
     
     # delete both
-    #deleted_txt = asyncio.run(indexer.delete_document(res_txt["doc_id"]))
-    #deleted_pdf = asyncio.run(indexer.delete_document(res_pdf["doc_id"]))
-    #assert deleted_txt is True
-    #assert deleted_pdf is True
-    #assert not os.path.isdir(txt_folder)
-    #assert not os.path.isdir(pdf_folder)
+    deleted_txt = asyncio.run(indexer.delete_document(res_txt["doc_id"]))
+    deleted_pdf = asyncio.run(indexer.delete_document(res_pdf["doc_id"]))
+    assert deleted_txt is True
+    assert deleted_pdf is True
+    assert not os.path.isdir(txt_folder)
+    assert not os.path.isdir(pdf_folder)
 
 
 def test_ingest_empty_rejected(tmp_path):
-    indexer.DATA_DIR = str(tmp_path / "docs")
-    indexer.CHROMA_DIR = str(tmp_path / "chroma")
-    indexer._embeddings = None
-    indexer._vectordb = None
+    cfg.DATA_DIR = str(tmp_path / "docs")
+    cfg.CHROMA_DIR = str(tmp_path / "chroma")
+    cfg._embeddings = None
+    cfg._vectordb = None
 
     # build an "empty file" 
     class U: pass

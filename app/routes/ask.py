@@ -58,7 +58,8 @@ async def ask(body: AskRequest):
     }
     payload = {
         "model": cfg.OPENROUTER_MODEL,
-        "messages": build_messages(question, docs),
+        "messages": [{"role": "system", "content": "Respond in plain text only. Do not use Markdown, bullets, lists, or code formatting."},
+    *build_messages(question, docs)],
         "temperature": 0,
         "top_p": 1,
         "stream": False, 
