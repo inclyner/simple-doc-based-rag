@@ -125,25 +125,42 @@ Below are equivalent command-line examples:
 ### Upload a file
 > Accepted file types are `.txt`, `.md`, and `.pdf`.
 > Two test documents are available on tests/test_docs
+
+macOS/Linux:
 ```bash
 curl -X POST "http://localhost:8000/files/" \
   -F "file=@example.txt"
 ```
+Windows PowerShell:
+```bash
+curl.exe -X POST "http://localhost:8000/files/" -F "file=@example.txt"
+```
 
 ### Ask a question
 
+macOS/Linux:
 ```bash
 curl -X POST "http://localhost:8000/ask/" \
   -H "Content-Type: application/json" \
   -d '{"question": "What is mentioned about the solar system?"}'
 ```
+Windows PowerShell:
+```bash
+$json = @{ question = "What do you know" } | ConvertTo-Json
+$resp = Invoke-RestMethod -Uri "http://localhost:8000/ask/" -Method POST -ContentType "application/json" -Body $json
+$resp.answer
+```
 
 ### Delete a document
 
+macOS/Linux:
 ```bash
 curl -X DELETE "http://localhost:8000/files/<doc_id>"
 ```
-
+Windows PowerShell:
+```bash
+curl.exe -X DELETE "http://localhost:8000/files/<doc_id>"
+```
 ---
 
 ## API Endpoints
