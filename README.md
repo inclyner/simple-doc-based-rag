@@ -142,7 +142,7 @@ curl -X POST "http://localhost:8000/ask/" \
 ```bash
 curl -X DELETE "http://localhost:8000/files/<doc_id>"
 ```
-To reset the database just delete the data folder (make sure the project isn't running)
+
 ---
 
 ## API Endpoints
