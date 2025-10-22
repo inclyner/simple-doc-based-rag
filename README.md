@@ -36,7 +36,8 @@ flowchart LR
   subgraph API
     R1[POST /files]
     R2[POST /ask]
-    IDX[Indexing\nSplit → Embed → Store]
+    IDX[Indexing
+    Split → Embed → Store]
     RET[Retrieve top-K]
     LLM[LLM via OpenRouter]
   end
